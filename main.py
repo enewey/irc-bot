@@ -1,16 +1,19 @@
-import time
-import thread
+#!/usr/bin/python
+
+# import thread
+import Tkinter
+import threading
 from client.bot import BotClient
 
 WAIT_TIME = 60
 
 client = BotClient()
+# client.watchDuration(60)
 
-startTime = time.time()
-timePassed = 0
-while timePassed < WAIT_TIME:
-	client.watch()
-	timePassed = time.time() - startTime
+event = threading.Event()
+threading.Thread(target=client.watchEvent, args=(event,)).start()
+raw_input("Hit Enter to see user list...")
+event.set()
 
 print "\n-------------------------"
 print "----Users who chatted----"

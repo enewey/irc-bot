@@ -1,13 +1,15 @@
 import sys
 import socket
 import string
+import time
+import threading
 
 HOST="irc.chat.twitch.tv"
 PORT=6667
 NICK="narcodis"
 IDENT="narcodis"
 REALNAME="narcodis"
-CHANNEL="#calebhart42"
+CHANNEL="#gamej06"
 PASSWORD="oauth:sabqly3c74rjkci3denq270b8helgo"
 
 def is_blank(str):
@@ -27,7 +29,22 @@ class BotClient(object):
 
 		self.userlist = {}
 
-	def watch(self, buf=""):
+	# this is meant to be threaded... event is a threading.Event
+	def watchEvent(self, event):
+		buf = ""
+		while not event.isSet():
+			buf = self.watch(buf)
+
+	# watch chat for a set duration of time
+	def watchDuration(self, duration=60):
+		startTime = time.time()
+		elapsed = 0
+		buf = ""
+		while elapsed < duration:
+			buf = self.watch(buf)
+			elapsed = time.time() - startTime
+
+	def watch(self, buf=""):	
 		buf = buf + self.sock.recv(1024)
 		split = string.split(buf, '\n')
 		buf = split.pop()
@@ -41,7 +58,7 @@ class BotClient(object):
 
 			if sp[0]=='PING':
 				res = format("PONG %s\r\n" % sp[1])
-				sock.send(res)
+				self.sock.send(res)
 				print string.rstrip(res)
 
 			elif sp[1] == 'PRIVMSG':
