@@ -96,9 +96,3 @@ class BotClient(object):
 		self.sock.shutdown(socket.SHUT_WR)
 		self.sock.close()
 		print "Client exited successfully"
-
-# sock=connect()
-# thread.start_new_thread(recv, (sock,))
-#thread.start_new_thread( chat,  ( sock, ) )
-
-# chat(sock)
