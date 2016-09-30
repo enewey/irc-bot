@@ -9,7 +9,7 @@ PORT=6667
 NICK="narcodis"
 IDENT="narcodis"
 REALNAME="narcodis"
-CHANNEL="#gamej06"
+CHANNEL="#patty"
 PASSWORD="oauth:sabqly3c74rjkci3denq270b8helgo"
 
 def is_blank(str):
@@ -17,7 +17,9 @@ def is_blank(str):
 
 class BotClient(object):
 
-	def __init__(self):
+	def __init__(self, listener=None):
+		self.listener = listener
+
 		self.sock=socket.socket()
 		self.sock.connect((HOST, PORT))
 
@@ -53,8 +55,8 @@ class BotClient(object):
 			if is_blank(line):
 				continue
 
-			line = string.rstrip(line)
-			sp = string.split(line)
+			line = line.rstrip()
+			sp = line.split()
 
 			if sp[0]=='PING':
 				res = format("PONG %s\r\n" % sp[1])
@@ -64,7 +66,7 @@ class BotClient(object):
 			elif sp[1] == 'PRIVMSG':
 				user = string.split(sp[0], '!')
 				user[0] = user[0][1:]
-				self.userlist[user[0]] = True # track users chatting
+				self.updateUserlist(user[0]) # track users chatting
 				msg = string.split(line, ':') # lines are prefixed with a colon, so first item will be a blank string
 				print format("[%s %s (%s)]: %s" % (sp[2], user[0], user[1], msg[2]))
 
@@ -83,8 +85,17 @@ class BotClient(object):
 			return
 		self.sock.sendall("PRIVMSG %s :%s\r\n" % (user, send))
 
+	def updateUserlist(self, name):
+		self.userlist[name] = True
+		self.listener(self.userlist)
+
 	def getUserlist(self):
 		return self.userlist
+
+	def exit(self):
+		self.sock.shutdown(socket.SHUT_WR)
+		self.sock.close()
+		print "Client exited successfully"
 
 # sock=connect()
 # thread.start_new_thread(recv, (sock,))
