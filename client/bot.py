@@ -2,33 +2,38 @@ import socket
 import string
 import time
 
-HOST="irc.chat.twitch.tv"
-PORT=6667
-NICK="narcodis"
-IDENT="narcodis"
-REALNAME="narcodis"
-CHANNEL="#day9tv"
-PASSWORD="oauth:sabqly3c74rjkci3denq270b8helgo"
-
 def is_blank(str):
     return bool(not str or str.isspace())
 
 class BotClient(object):
 
-    def __init__(self, listener=None):
+    def __init__(self, config=None, listener=None):
         self.listener = listener
         self.userlist = {}
+        self.config = config
 
     def connect(self, channel):
-        self.sock = socket.socket()
-        self.sock.connect((HOST, PORT))
+        nick = self.config.user
+        ident = self.config.user
+        realname = self.config.user
+        host = self.config.host
+        port = self.config.port
+        chan = self.config.channel
+        password = self.config.token
 
-        if PASSWORD:
-            self.sock.send("PASS %s\r\n" % PASSWORD)
-        self.sock.send("NICK %s\r\n" % NICK)
-        self.sock.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
+        #Open socket and connect to server
+        self.sock = socket.socket()
+        self.sock.connect((host, port))
+
+        #Identify
+        if password:
+            self.sock.send("PASS %s\r\n" % password)
+        self.sock.send("NICK %s\r\n" % nick)
+        self.sock.send("USER %s %s bla :%s\r\n" % (ident, host, realname))
+
+        #Join channel
         if is_blank(channel):
-            channel = CHANNEL
+            channel = chan
         if not channel.startswith("#"):
             channel = "#" + channel
         self.sock.send("JOIN %s\r\n" % channel)
@@ -78,19 +83,20 @@ class BotClient(object):
                 print line
         return buf
 
-    def sendToChannel(self, send="", channel=CHANNEL):
+    def sendToChannel(self, send="", channel="#admin"):
         if is_blank(send):
             return
         self.sock.sendall("PRIVMSG %s :%s\r\n" % (channel, send))
 
-    def sendToUser(self, send="", user=NICK):
+    def sendToUser(self, send="", user="admin"):
         if is_blank(send):
             return
         self.sock.sendall("PRIVMSG %s :%s\r\n" % (user, send))
 
     def updateUserlist(self, name):
         self.userlist[name] = True
-        self.listener_event()
+        if self.listener is not None:
+            self.listener_event()
     
     def listener_event(self):
         payload = {

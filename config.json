@@ -1,0 +1,12 @@
+{
+    "gui": {
+        "font":"verdana"
+    },
+    "irc": {
+        "host":"irc.chat.twitch.tv",
+        "port":6667,
+        "user":"narcodis",
+        "token":"oauth:sabqly3c74rjkci3denq270b8helgo",
+        "channel":"#nalcs1"
+    }
+}
