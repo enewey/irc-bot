@@ -11,12 +11,12 @@ class BotManager(object):
     def is_active(self):
         return self.active
 
-    def start(self, listener):
+    def start(self, listener, channel):
         if self.active:
             return
 
         self.active = True
-        self.client = BotClient(listener=listener)
+        self.client = BotClient(listener=listener).connect(channel=channel)
         self.event = threading.Event()
 
         threading.Thread(target=self.client.watch_event, args=(self.event,)).start()

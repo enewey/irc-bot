@@ -17,7 +17,9 @@ class BotClient(object):
 
     def __init__(self, listener=None):
         self.listener = listener
+        self.userlist = {}
 
+    def connect(self, channel):
         self.sock = socket.socket()
         self.sock.connect((HOST, PORT))
 
@@ -25,9 +27,13 @@ class BotClient(object):
             self.sock.send("PASS %s\r\n" % PASSWORD)
         self.sock.send("NICK %s\r\n" % NICK)
         self.sock.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
-        self.sock.send("JOIN %s\r\n" % CHANNEL)
+        if is_blank(channel):
+            channel = CHANNEL
+        if not channel.startswith("#"):
+            channel = "#" + channel
+        self.sock.send("JOIN %s\r\n" % channel)
 
-        self.userlist = {}
+        return self
 
     # this is meant to be threaded... event is a threading.Event
     def watch_event(self, event):
@@ -70,7 +76,6 @@ class BotClient(object):
 
             else:
                 print line
-
         return buf
 
     def sendToChannel(self, send="", channel=CHANNEL):
