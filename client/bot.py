@@ -90,7 +90,14 @@ class BotClient(object):
 
     def updateUserlist(self, name):
         self.userlist[name] = True
-        self.listener(self.userlist)
+        self.listener_event()
+    
+    def listener_event(self):
+        payload = {
+            'info': len(self.userlist),
+            'names': self.userlist
+        }
+        self.listener(payload)
 
     def getUserlist(self):
         return self.userlist

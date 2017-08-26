@@ -1,12 +1,15 @@
-import Tkinter
+from mttkinter import mtTkinter as tk
 
-class Namebox(Tkinter.Listbox):
+class Namebox(tk.Listbox):
+
+    update_event = 'names'
 
     def refreshBox(self, names):
         self.delete(0, self.size())
         self.insert(0, *names)
 
-        #self.resize()
+    def update(self, payload):
+        self.refreshBox(payload)
 
     def resize(self):
         if self.cget('height') < self.size():

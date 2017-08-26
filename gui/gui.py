@@ -1,37 +1,39 @@
 #!/usr/bin/python
 
-from Tkinter import *
+from mttkinter import mtTkinter as tk
 import tkMessageBox
 import time
 import datetime
 import math
 
 from namebox import Namebox
-
+from info_bar import InfoBar
 
 class Gui(object):
+
+    events = {}
 
     def __init__(self, manager=None):
         self.manager = manager
 
-        self.root = Tk()
+        self.root = tk.Tk()
         self.root.title("Twitch Bot")
 
         #Channel input
-        self.input_box = Entry(self.root)
+        self.input_box = tk.Entry(self.root)
         self.input_box.grid(row=0, column=0, sticky='nsew')
 
         #Start/stop button
-        self.button = Button(self.root, text="Start", command=self.button_press)
+        self.button = tk.Button(self.root, text="Start", command=self.button_press)
         self.button.grid(ipady=5, ipadx=20, row=1, column=0, sticky='nsew')
 
         #Timer
         self.run_timer = False
-        self.timer = Label(self.root, font=('arial', 12, ''), bg='white')
+        self.timer = tk.Label(self.root, font=('arial', 12, ''), bg='white')
         self.timer.grid(ipady=5, ipadx=5, row=0, rowspan=2, column=1, columnspan=2, sticky='nsew')
 
         #Scrollbar
-        self.scrollbar = Scrollbar(self.root)
+        self.scrollbar = tk.Scrollbar(self.root)
         self.scrollbar.grid(row=2, column=2, sticky='nsew')
 
         #Namebox
@@ -39,16 +41,26 @@ class Gui(object):
         for name in ["Alice", "Bob", "Cindy", "David", "Erich"]:
             self.box.insert(0, name)
         self.box.grid(ipady=6, ipadx=6, row=2, column=0, columnspan=2, sticky='nsew')
+        self.register_event(self.box.update_event, self.box.update)
 
         #Set Scrollbar to namebox
         self.box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.box.yview)
+
+        #Info bar at bottom
+        self.info = InfoBar(self.root, font=('arial', 10, ''), bg='white')
+        self.info.grid(ipady=2, ipadx=2, row=3, column=0, columnspan=3, sticky='nsew')
+        self.info.config(anchor=tk.W)
+        self.register_event(self.info.update_event, self.info.update)
 
         # Set event protocol handlers
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         #It's go time boys
         self.root.mainloop()
+
+    def register_event(self, key, event):
+        self.events[key] = event
 
     ###########################
     # Protocol handlers
@@ -91,12 +103,17 @@ class Gui(object):
     def button_press(self):
         if self.manager.is_active():
             self.manager.stop()
-            self.input_box.config(state=NORMAL)
+            self.input_box.config(state=tk.NORMAL)
             self.stop_timer()
             self.button.config(text="Start")
         else:
             self.box.refreshBox([])
-            self.input_box.config(state=DISABLED)
-            self.manager.start(self.box.refreshBox, self.input_box.get())
+            self.input_box.config(state=tk.DISABLED)
+            self.manager.start(self.event_handler, self.input_box.get())
             self.start_timer()
             self.button.config(text="Stop")
+
+    def event_handler(self, payload):
+        for key, val in self.events.items():
+            if payload[key]:
+                val(payload[key])
