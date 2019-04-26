@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 from client.manager import BotManager
 from gui.gui import Gui
 from config.config import Config

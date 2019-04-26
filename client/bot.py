@@ -1,5 +1,4 @@
 import socket
-import string
 import time
 
 def is_blank(str):
@@ -27,22 +26,22 @@ class BotClient(object):
 
         #Identify
         if password:
-            self.sock.send("PASS %s\r\n" % password)
-        self.sock.send("NICK %s\r\n" % nick)
-        self.sock.send("USER %s %s bla :%s\r\n" % (ident, host, realname))
+            self.sock.send(("PASS %s\r\n" % password).encode())
+        self.sock.send(("NICK %s\r\n" % nick).encode())
+        self.sock.send(("USER %s %s bla :%s\r\n" % (ident, host, realname)).encode())
 
         #Join channel
         if is_blank(channel):
             channel = chan
         if not channel.startswith("#"):
             channel = "#" + channel
-        self.sock.send("JOIN %s\r\n" % channel)
+        self.sock.send(("JOIN %s\r\n" % channel).encode())
 
         return self
 
     # this is meant to be threaded... event is a threading.Event
     def watch_event(self, event):
-        buf = ""
+        buf = b''
         while not event.isSet():
             buf = self.watch(buf)
 
@@ -50,15 +49,15 @@ class BotClient(object):
     def watch_duration(self, duration=60):
         start_time = time.time()
         elapsed = 0
-        buf = ""
+        buf = b''
         while elapsed < duration:
             buf = self.watch(buf)
             elapsed = time.time() - start_time
 
-    def watch(self, buf=""):
+    def watch(self, buf=b''):
         buf = buf + self.sock.recv(1024)
-        split = string.split(buf, '\n')
-        buf = split.pop()
+        split = str.split(buf.decode(), '\n')
+        buf = split.pop().encode()
 
         for line in split:
             if is_blank(line):
@@ -69,29 +68,29 @@ class BotClient(object):
 
             if sp[0] == 'PING':
                 res = format("PONG %s\r\n" % sp[1])
-                self.sock.send(res)
-                print string.rstrip(res)
+                self.sock.send(res.encode())
+                print(str.rstrip(res))
 
             elif sp[1] == 'PRIVMSG':
-                user = string.split(sp[0], '!')
+                user = str.split(sp[0], '!')
                 user[0] = user[0][1:]
                 self.updateUserlist(user[0]) # track users chatting
-                msg = string.split(line, ':') # lines are prefixed with a colon,first item is blank string
-                print format("[%s %s (%s)]: %s" % (sp[2], user[0], user[1], msg[2]))
+                msg = str.split(line, ':') # lines are prefixed with a colon,first item is blank string
+                print(format("[%s %s (%s)]: %s" % (sp[2], user[0], user[1], msg[2])))
 
             else:
-                print line
+                print(line)
         return buf
 
     def sendToChannel(self, send="", channel="#admin"):
         if is_blank(send):
             return
-        self.sock.sendall("PRIVMSG %s :%s\r\n" % (channel, send))
+        self.sock.sendall(("PRIVMSG %s :%s\r\n" % (channel, send)).encode())
 
     def sendToUser(self, send="", user="admin"):
         if is_blank(send):
             return
-        self.sock.sendall("PRIVMSG %s :%s\r\n" % (user, send))
+        self.sock.sendall(("PRIVMSG %s :%s\r\n" % (user, send)).encode())
 
     def updateUserlist(self, name):
         self.userlist[name] = True
@@ -111,4 +110,4 @@ class BotClient(object):
     def exit(self):
         self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
-        print "Client exited successfully"
+        print("Client exited successfully")

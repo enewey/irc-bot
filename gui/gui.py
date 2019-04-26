@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
-from mttkinter import mtTkinter as tk
-import tkMessageBox
+import tkinter as tk
+from tkinter import messagebox
 import time
 import datetime
 import math
 
-from namebox import Namebox
-from info_bar import InfoBar
+from .namebox import Namebox
+from .info_bar import InfoBar
 from config.gui import GuiConfig
 
 class Gui(object):
@@ -74,7 +74,7 @@ class Gui(object):
 
     def on_close(self):
         if self.manager.is_active():
-            if tkMessageBox.askokcancel("Quit", "IRC Bot is running and will be disconnected.\nAre you sure you want to quit?"):
+            if messagebox.askokcancel("Quit", "IRC Bot is running and will be disconnected.\nAre you sure you want to quit?"):
                 self.manager.stop()
                 self.root.destroy()
         else:
@@ -133,6 +133,6 @@ class Gui(object):
         self.events[key] = event
 
     def event_handler(self, payload):
-        for key, val in self.events.items():
+        for key, fn in self.events.items():
             if payload[key]:
-                val(payload[key])
+                fn(payload[key])

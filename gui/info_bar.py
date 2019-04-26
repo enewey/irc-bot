@@ -1,4 +1,4 @@
-from mttkinter import mtTkinter as tk
+import tkinter as tk
 
 class InfoBar(tk.Label):
 

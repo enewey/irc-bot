@@ -1,7 +1,7 @@
 import json
 
-from gui import GuiConfig
-from irc import IrcConfig
+from .gui import GuiConfig
+from .irc import IrcConfig
 
 # defaults
 DEFAULT_CONFIG = {
@@ -27,5 +27,5 @@ class Config(object):
     def load_json(self, filename):
         with open(filename) as d:
             data = json.load(d)
-        print "Data loaded: %s\n" % data
+        print("Data loaded: %s\n" % data)
         return self.load_config(data)

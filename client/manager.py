@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import threading
-from bot import BotClient
+from .bot import BotClient
 
 class BotManager(object):
 
