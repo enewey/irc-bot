@@ -19,7 +19,10 @@ class BotManager(object):
             return
 
         self.active = True
-        self.client = BotClient(config=self.config, listener=listener).connect(channel=channel)
+        self.client = BotClient(
+            config=self.config, 
+            listener=listener
+        ).connect(channel=channel)
         self.event = threading.Event()
 
         threading.Thread(target=self.client.watch_event, args=(self.event,)).start()
@@ -30,7 +33,7 @@ class BotManager(object):
 
         self.active = False
         self.event.set()
-        self.client.exit()
+        self.client.shutdown()
 
     def get_config(self):
         return self.config

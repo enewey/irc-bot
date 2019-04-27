@@ -7,7 +7,8 @@ import datetime
 import math
 
 from .namebox import Namebox
-from .info_bar import InfoBar
+from .infobar import InfoBar
+from .chatbox import Chatbox
 from config.gui import GuiConfig
 
 class Gui(object):
@@ -29,16 +30,19 @@ class Gui(object):
         self.input_box = tk.Entry(self.root)
         self.input_box.config(font=(config.font, 12, ''))
         self.input_box.grid(row=0, column=0, sticky='nsew')
-        self.input_box.insert(0, self.manager.get_config().channel) #default in config.json
+        #default channel in config.json
+        self.input_box.insert(0, self.manager.get_config().channel)
 
         #Start/stop button
-        self.button = tk.Button(self.root, text="Start", command=self.button_press)
+        self.button = tk.Button(self.root, 
+            text="Start", command=self.button_press)
         self.button.grid(ipady=5, ipadx=20, row=1, column=0, sticky='nsew')
 
         #Timer
         self.run_timer = False
         self.timer = tk.Label(self.root, font=(config.font, 12, ''), bg='white')
-        self.timer.grid(ipady=5, ipadx=5, row=0, rowspan=2, column=1, columnspan=2, sticky='nsew')
+        self.timer.grid(ipady=5, ipadx=5, row=0, rowspan=2,
+             column=1, columnspan=2, sticky='nsew')
 
         #Scrollbar
         self.scrollbar = tk.Scrollbar(self.root)
@@ -48,17 +52,25 @@ class Gui(object):
         self.box = Namebox(self.root)
         for name in ["Alice", "Bob", "Cindy", "David", "Erich"]:
             self.box.insert(0, name)
-        self.box.grid(ipady=6, ipadx=6, row=2, column=0, columnspan=2, sticky='nsew')
+        self.box.grid(ipady=6, ipadx=6, row=2, 
+            column=0, columnspan=2, sticky='nsew')
         self.box.config(font=(config.font, 12, ''))
         self.register_event(self.box.update_event, self.box.update)
-
         #Set Scrollbar to namebox
         self.box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.box.yview)
 
+        #Chatbox
+        self.chat = Chatbox(self.root)
+        self.chat.grid(ipady=6, ipadx=6, row=2, 
+            column=2, columnspan=10, sticky='nsew')
+        self.chat.config(font=(config.font, 12, ''))
+        self.register_event(self.chat.update_event, self.chat.update)
+
         #Info bar at bottom
         self.info = InfoBar(self.root, font=(config.font, 10, ''), bg='white')
-        self.info.grid(ipady=2, ipadx=2, row=3, column=0, columnspan=3, sticky='nsew')
+        self.info.grid(ipady=2, ipadx=2, row=3, 
+            column=0, columnspan=3, sticky='nsew')
         self.info.config(anchor=tk.W)
         self.register_event(self.info.update_event, self.info.update)
 
@@ -74,7 +86,9 @@ class Gui(object):
 
     def on_close(self):
         if self.manager.is_active():
-            if messagebox.askokcancel("Quit", "IRC Bot is running and will be disconnected.\nAre you sure you want to quit?"):
+            if messagebox.askokcancel("Quit", 
+                "IRC Bot is running and will be disconnected.\n\
+                Are you sure you want to quit?"):
                 self.manager.stop()
                 self.root.destroy()
         else:

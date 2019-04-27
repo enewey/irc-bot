@@ -9,6 +9,7 @@ class BotClient(object):
     def __init__(self, config=None, listener=None):
         self.listener = listener
         self.userlist = {}
+        self.chat = []
         self.config = config
 
     def connect(self, channel):
@@ -28,7 +29,9 @@ class BotClient(object):
         if password:
             self.sock.send(("PASS %s\r\n" % password).encode())
         self.sock.send(("NICK %s\r\n" % nick).encode())
-        self.sock.send(("USER %s %s bla :%s\r\n" % (ident, host, realname)).encode())
+        self.sock.send(("USER %s %s bla :%s\r\n" % 
+            (ident, host, realname)).encode()
+        )
 
         #Join channel
         if is_blank(channel):
@@ -55,7 +58,15 @@ class BotClient(object):
             elapsed = time.time() - start_time
 
     def watch(self, buf=b''):
-        buf = buf + self.sock.recv(1024)
+        try:
+            buf = buf + self.sock.recv(1024)
+        except OSError as err:
+            # Socket closed while receiving buf, ignore
+            if "[Errno 9]" in str(err):
+                return
+            else:
+                raise err
+
         split = str.split(buf.decode(), '\n')
         buf = split.pop().encode()
 
@@ -65,21 +76,28 @@ class BotClient(object):
 
             line = line.rstrip()
             sp = line.split()
+            cmd = sp[1]
 
-            if sp[0] == 'PING':
+            if cmd == 'PING':
                 res = format("PONG %s\r\n" % sp[1])
                 self.sock.send(res.encode())
                 print(str.rstrip(res))
 
-            elif sp[1] == 'PRIVMSG':
+            elif cmd == 'PRIVMSG':
+                channel = sp[2]
                 user = str.split(sp[0], '!')
-                user[0] = user[0][1:]
-                self.updateUserlist(user[0]) # track users chatting
-                msg = str.split(line, ':') # lines are prefixed with a colon,first item is blank string
-                print(format("[%s %s (%s)]: %s" % (sp[2], user[0], user[1], msg[2])))
+                username = user[0][1:]
+                useraddr = user[1]
+                self.updateUserlist(username) # track users chatting
+                # lines are prefixed with a colon,first item is blank string
+                msg = str.split(line, ':')[2]
+                chatmsg = format("\033[1;32m[%s %s (%s)]:\033[0;37m %s" % 
+                        (channel, username, useraddr, msg)
+                    )
+                self.updateChat(chatmsg)
 
             else:
-                print(line)
+                print("\033[0;31m%s\033[0;37m" % line)
         return buf
 
     def sendToChannel(self, send="", channel="#admin"):
@@ -96,18 +114,25 @@ class BotClient(object):
         self.userlist[name] = True
         if self.listener is not None:
             self.listener_event()
+
+    def updateChat(self, msg):
+        self.chat.append(msg)
+        if self.listener is not None:
+            self.listener_event()
     
     def listener_event(self):
+        # each key in this payload corresponds to an update_event
         payload = {
             'info': len(self.userlist),
-            'names': self.userlist
+            'names': self.userlist,
+            'chat': self.chat
         }
         self.listener(payload)
 
     def getUserlist(self):
         return self.userlist
 
-    def exit(self):
+    def shutdown(self):
         self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
         print("Client exited successfully")
