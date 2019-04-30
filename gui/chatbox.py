@@ -1,14 +1,21 @@
 import tkinter as tk
 
-class Chatbox(tk.Listbox):
+def format_line(line):
+    if str.find(line, "\n") > -1:
+        sp = line.split("\n")
+        return "\n".join(map(format_line, sp))
+    
+    elif len(line) > 100:
+        return line[:100] + "\n" + format_line(line[100:])
+    
+    return line
+
+class Chatbox(tk.Label):
 
     update_event = 'chat'
 
     def refreshBox(self, log):
-        self.delete(0, self.size())
-        if len(log) > 10:
-            log = log[len(log)-10:]
-        self.insert(0, *log)
+        self.config(text="\n".join(map(format_line, log)))
 
     def update(self, payload):
         self.refreshBox(payload)

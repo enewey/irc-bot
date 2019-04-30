@@ -91,10 +91,11 @@ class BotClient(object):
                 self.updateUserlist(username) # track users chatting
                 # lines are prefixed with a colon,first item is blank string
                 msg = str.split(line, ':')[2]
-                chatmsg = format("\033[1;32m[%s %s (%s)]:\033[0;37m %s" % 
+                chatmsg = format("[%s %s (%s)]: %s" % 
                         (channel, username, useraddr, msg)
                     )
                 self.updateChat(chatmsg)
+                print(chatmsg)
 
             else:
                 print("\033[0;31m%s\033[0;37m" % line)

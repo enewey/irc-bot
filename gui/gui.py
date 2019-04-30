@@ -27,29 +27,28 @@ class Gui(object):
         self.root.title("Twitch Bot")
 
         #Channel input
-        self.input_box = tk.Entry(self.root)
+        self.input_box = tk.Entry()
         self.input_box.config(font=(config.font, 12, ''))
         self.input_box.grid(row=0, column=0, sticky='nsew')
         #default channel in config.json
         self.input_box.insert(0, self.manager.get_config().channel)
 
         #Start/stop button
-        self.button = tk.Button(self.root, 
-            text="Start", command=self.button_press)
+        self.button = tk.Button(text="Start", command=self.button_press)
         self.button.grid(ipady=5, ipadx=20, row=1, column=0, sticky='nsew')
 
         #Timer
         self.run_timer = False
-        self.timer = tk.Label(self.root, font=(config.font, 12, ''), bg='white')
+        self.timer = tk.Label(font=(config.font, 12, ''), bg='white')
         self.timer.grid(ipady=5, ipadx=5, row=0, rowspan=2,
              column=1, columnspan=2, sticky='nsew')
 
         #Scrollbar
-        self.scrollbar = tk.Scrollbar(self.root)
+        self.scrollbar = tk.Scrollbar()
         self.scrollbar.grid(row=2, column=2, sticky='nsew')
 
         #Namebox
-        self.box = Namebox(self.root)
+        self.box = Namebox()
         for name in ["Alice", "Bob", "Cindy", "David", "Erich"]:
             self.box.insert(0, name)
         self.box.grid(ipady=6, ipadx=6, row=2, 
@@ -61,11 +60,16 @@ class Gui(object):
         self.scrollbar.config(command=self.box.yview)
 
         #Chatbox
-        self.chat = Chatbox(self.root)
-        self.chat.grid(ipady=6, ipadx=6, row=2, 
-            column=2, columnspan=10, sticky='nsew')
+        # self.chat_frame = tk.Frame(width=60, height=60)
+        self.chat = Chatbox(self.root, width=100, height=20, 
+            justify=tk.LEFT, anchor=tk.SW, text="", 
+            font=(config.font, 10, ''))
+        self.chat.grid(ipady=2, ipadx=2, row=2, 
+            column=5, columnspan=3, sticky='se')
         self.chat.config(font=(config.font, 12, ''))
         self.register_event(self.chat.update_event, self.chat.update)
+
+        # self.chat_frame.grid(ipady=6, ipadx=6, row=2, column=2, columnspan=10)
 
         #Info bar at bottom
         self.info = InfoBar(self.root, font=(config.font, 10, ''), bg='white')
