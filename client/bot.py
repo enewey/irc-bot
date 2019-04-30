@@ -89,9 +89,11 @@ class BotClient(object):
                 user = str.split(sp[0], '!')
                 username = user[0][1:]
                 self.updateUserlist(username) # track users chatting
-                # lines are prefixed with a colon,first item is blank string
-                msg = str.split(line, ':')[2]
-                msg = ''.join(char for char in msg if len(char.encode('utf-8')) < 3)
+                # lines are prefixed with a colon, first item is blank string
+                # msg could contain ':', of course, so join with that.
+                msg = ':'.join(str.split(line, ':')[2:])
+                # need to filter out 0x10000+ characters, as per Tcl
+                msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
                 chatmsg = format("[%s]: %s" % 
                         (username, msg)
                     )
