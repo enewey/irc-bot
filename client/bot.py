@@ -59,7 +59,7 @@ class BotClient(object):
 
     def watch(self, buf=b''):
         try:
-            buf = buf + self.sock.recv(1024)
+            buf = buf + self.sock.recv(4096)
         except OSError as err:
             # Socket closed while receiving buf, ignore
             if "[Errno 9]" in str(err):
@@ -84,15 +84,16 @@ class BotClient(object):
                 print(str.rstrip(res))
 
             elif cmd == 'PRIVMSG':
-                channel = sp[2]
+                #channel = sp[2]
+                #useraddr = user[1]
                 user = str.split(sp[0], '!')
                 username = user[0][1:]
-                useraddr = user[1]
                 self.updateUserlist(username) # track users chatting
                 # lines are prefixed with a colon,first item is blank string
                 msg = str.split(line, ':')[2]
-                chatmsg = format("[%s %s (%s)]: %s" % 
-                        (channel, username, useraddr, msg)
+                msg = ''.join(char for char in msg if len(char.encode('utf-8')) < 3)
+                chatmsg = format("[%s]: %s" % 
+                        (username, msg)
                     )
                 self.updateChat(chatmsg)
                 print(chatmsg)

@@ -1,6 +1,6 @@
 {
     "gui": {
-        "font":"verdana"
+        "font":"PT Mono"
     },
     "irc": {
         "host":"irc.chat.twitch.tv",

@@ -39,9 +39,10 @@ class Gui(object):
 
         #Timer
         self.run_timer = False
-        self.timer = tk.Label(font=(config.font, 12, ''), bg='white')
+        self.timer = tk.Label(font=(config.font, 12, ''),
+            text="-:--:--", bg='white')
         self.timer.grid(ipady=5, ipadx=5, row=0, rowspan=2,
-             column=1, columnspan=2, sticky='nsew')
+             column=1, columnspan=1, sticky='nsew')
 
         #Scrollbar
         self.scrollbar = tk.Scrollbar()
@@ -53,10 +54,8 @@ class Gui(object):
             self.box.insert(0, name)
         self.box.grid(ipady=6, ipadx=6, row=2, 
             column=0, columnspan=2, sticky='nsew')
-        self.box.config(font=(config.font, 12, ''))
+        self.box.config(font=(config.font, 12, ''), yscrollcommand=self.scrollbar.set)
         self.register_event(self.box.update_event, self.box.update)
-        #Set Scrollbar to namebox
-        self.box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.box.yview)
 
         #Chatbox
@@ -65,16 +64,23 @@ class Gui(object):
             justify=tk.LEFT, anchor=tk.SW, text="", 
             font=(config.font, 10, ''))
         self.chat.grid(ipady=2, ipadx=2, row=2, 
-            column=5, columnspan=3, sticky='se')
+            column=2, columnspan=3, sticky='se')
         self.chat.config(font=(config.font, 12, ''))
         self.register_event(self.chat.update_event, self.chat.update)
+
+        #Chat input
+        self.chat_input_box = tk.Entry()
+        self.chat_input_box.config(font=(config.font, 12, ''), 
+            width=100, justify=tk.LEFT)
+        self.chat_input_box.grid(ipady=2, ipadx=2, row=3, 
+            column=2, columnspan=3, sticky='se')
 
         # self.chat_frame.grid(ipady=6, ipadx=6, row=2, column=2, columnspan=10)
 
         #Info bar at bottom
         self.info = InfoBar(self.root, font=(config.font, 10, ''), bg='white')
         self.info.grid(ipady=2, ipadx=2, row=3, 
-            column=0, columnspan=3, sticky='nsew')
+            column=0, columnspan=2, sticky='nsew')
         self.info.config(anchor=tk.W)
         self.register_event(self.info.update_event, self.info.update)
 
@@ -132,6 +138,7 @@ class Gui(object):
             self.button.config(text="Start")
         else:
             self.box.refreshBox([])
+            self.chat.refreshBox([])
             self.input_box.config(state=tk.DISABLED)
             self.manager.start(self.event_handler, self.input_box.get())
             self.start_timer()
