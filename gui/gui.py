@@ -74,7 +74,7 @@ class Gui(object):
             width=100, justify=tk.LEFT)
         self.chat_input_box.grid(ipady=2, ipadx=2, row=3, 
             column=2, columnspan=3, sticky='se')
-        self.chat_input_box.bind("<Return>", self.onEnter)
+        self.chat_input_box.bind("<Return>", self.on_chat_input_return)
 
         # self.chat_frame.grid(ipady=6, ipadx=6, row=2, column=2, columnspan=10)
 
@@ -91,7 +91,7 @@ class Gui(object):
         #It's go time boys
         self.root.mainloop()
 
-    def onEnter(self, event):
+    def on_chat_input_return(self, event):
         self.send_to_channel(self.chat_input_box.get(), self.input_box.get())
         self.chat_input_box.delete(0, tk.END)
 
@@ -142,8 +142,8 @@ class Gui(object):
             self.stop_timer()
             self.button.config(text="Start")
         else:
-            self.box.refreshBox([])
-            self.chat.refreshBox([])
+            self.box.refresh_box([])
+            self.chat.refresh_box([])
             self.input_box.config(state=tk.DISABLED)
             self.manager.start(self.event_handler, self.input_box.get())
             self.start_timer()

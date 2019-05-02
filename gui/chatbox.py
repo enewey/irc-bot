@@ -13,13 +13,13 @@ class Chatbox(tk.Label):
 
     update_event = 'chat'
 
-    def refreshBox(self, log):
+    def refresh_box(self, log):
         self.config(text="\n".join(
             map(format_line, log)
         ))
 
     def update(self, payload):
-        self.refreshBox(payload)
+        self.refresh_box(payload)
 
     def resize(self):
         if self.cget('height') < self.size():

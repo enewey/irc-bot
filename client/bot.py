@@ -91,32 +91,32 @@ class BotClient(object):
                 #useraddr = user[1]
                 user = str.split(sp[0], '!')
                 username = user[0][1:]
-                self.updateUserlist(username) # track users chatting
+                self.update_userlist(username) # track users chatting
                 # lines are prefixed with a colon, first item is blank string
                 # msg could contain ':', of course, so join with that.
                 msg = ':'.join(str.split(line, ':')[2:])
                 # need to filter out 0x10000+ characters, as per Tcl
-                self.updateChat(username, msg)
+                self.update_chat(username, msg)
 
             else:
                 print("\033[0;31m%s\033[0;37m" % line)
         return buf
 
-    def sendToChannel(self, send="", channel="#admin"):
+    def send_to_channel(self, send="", channel="#admin"):
         if is_blank(send):
             return
         self.sock.sendall(("PRIVMSG %s :%s\r\n" % (channel, send)).encode())
 
-    def sendToUser(self, send="", user="admin"):
+    def send_to_user(self, send="", user="admin"):
         if is_blank(send):
             return
         self.sock.sendall(("PRIVMSG %s :%s\r\n" % (user, send)).encode())
 
-    def updateUserlist(self, name):
+    def update_userlist(self, name):
         self.userlist[name] = True
         self.listener_event()
 
-    def updateChat(self, username, msg):
+    def update_chat(self, username, msg):
         msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
         msg = format("[%s]: %s" % (username, msg))
         
@@ -135,7 +135,7 @@ class BotClient(object):
         }
         self.listener(payload)
 
-    def getUserlist(self):
+    def get_user_list(self):
         return self.userlist
 
     def shutdown(self):
@@ -143,36 +143,39 @@ class BotClient(object):
         self.sock.close()
         print("Client exited successfully")
 
-    def receive(self, command):
-        self.queueCommand(command)
+    #
+    # Functions related to receiving and processing commands
+    # "Commands" stem from user input (from the GUI), or in response to
+    #   messages observed in the current IRC channel (not implemented yet)
+    #
 
-    def queueCommand(self, command):
+    def receive(self, command):
+        self.queue_command(command)
+
+    def queue_command(self, command):
         self.lock.acquire(blocking=True)
         self.command_queue.append(command)
         self.lock.release()
-        self.processQueue()
+        self.process_queue()
+    
+    def process_queue(self):
+        self.lock.acquire(blocking=True)
+        while len(self.command_queue) > 0:
+            self.process_command(self.command_queue.pop(0))
+        self.lock.release()
 
     # command = { type: "string", data: {} }
-    def processCommand(self, command):
+    def process_command(self, command):
         typ = command["type"]
         data = command["data"]
         if typ == 'send_to_channel':
             send = data["send"]
             channel = data["channel"]
-            self.sendToChannel(send, channel)
-            self.updateChat(self.config.user, send)
+            self.send_to_channel(send, channel)
+            self.update_chat(self.config.user, send)
         elif typ == 'send_to_user':
             send = data["send"]
             user = data["user"]
-            self.sendToUser(send, user)
+            self.send_to_user(send, user)
         else:
             print("unknown command processed %s" % typ)
-        
-
-    def processQueue(self):
-        self.lock.acquire(blocking=True)
-        while len(self.command_queue) > 0:
-            self.processCommand(self.command_queue.pop(0))
-        self.lock.release()
-
-
