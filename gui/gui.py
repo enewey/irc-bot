@@ -74,6 +74,7 @@ class Gui(object):
             width=100, justify=tk.LEFT)
         self.chat_input_box.grid(ipady=2, ipadx=2, row=3, 
             column=2, columnspan=3, sticky='se')
+        self.chat_input_box.bind("<Return>", self.onEnter)
 
         # self.chat_frame.grid(ipady=6, ipadx=6, row=2, column=2, columnspan=10)
 
@@ -89,6 +90,10 @@ class Gui(object):
 
         #It's go time boys
         self.root.mainloop()
+
+    def onEnter(self, event):
+        self.send_to_channel(self.chat_input_box.get(), self.input_box.get())
+        self.chat_input_box.delete(0, tk.END)
 
     ###########################
     # Protocol handlers
@@ -161,3 +166,13 @@ class Gui(object):
         for key, fn in self.events.items():
             if payload[key]:
                 fn(payload[key])
+
+    def send_to_channel(self, send, channel):
+        command = {
+            "type": "send_to_channel",
+            "data": {
+                "send": send,
+                "channel": channel
+            }
+        }
+        self.manager.send_command_to_bot(command)

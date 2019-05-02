@@ -1,5 +1,6 @@
 import socket
 import time
+from threading import Lock
 
 def is_blank(str):
     return bool(not str or str.isspace())
@@ -11,6 +12,8 @@ class BotClient(object):
         self.userlist = {}
         self.chat = []
         self.config = config
+        self.command_queue = []
+        self.lock = Lock()
 
     def connect(self, channel):
         nick = self.config.user
@@ -93,12 +96,7 @@ class BotClient(object):
                 # msg could contain ':', of course, so join with that.
                 msg = ':'.join(str.split(line, ':')[2:])
                 # need to filter out 0x10000+ characters, as per Tcl
-                msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
-                chatmsg = format("[%s]: %s" % 
-                        (username, msg)
-                    )
-                self.updateChat(chatmsg)
-                print(chatmsg)
+                self.updateChat(username, msg)
 
             else:
                 print("\033[0;31m%s\033[0;37m" % line)
@@ -116,15 +114,19 @@ class BotClient(object):
 
     def updateUserlist(self, name):
         self.userlist[name] = True
-        if self.listener is not None:
-            self.listener_event()
+        self.listener_event()
 
-    def updateChat(self, msg):
+    def updateChat(self, username, msg):
+        msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
+        msg = format("[%s]: %s" % (username, msg))
+        
+        print(msg)
         self.chat.append(msg)
-        if self.listener is not None:
-            self.listener_event()
+        self.listener_event()
     
     def listener_event(self):
+        if self.listener is None:
+            return
         # each key in this payload corresponds to an update_event
         payload = {
             'info': len(self.userlist),
@@ -140,3 +142,37 @@ class BotClient(object):
         self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
         print("Client exited successfully")
+
+    def receive(self, command):
+        self.queueCommand(command)
+
+    def queueCommand(self, command):
+        self.lock.acquire(blocking=True)
+        self.command_queue.append(command)
+        self.lock.release()
+        self.processQueue()
+
+    # command = { type: "string", data: {} }
+    def processCommand(self, command):
+        typ = command["type"]
+        data = command["data"]
+        if typ == 'send_to_channel':
+            send = data["send"]
+            channel = data["channel"]
+            self.sendToChannel(send, channel)
+            self.updateChat(self.config.user, send)
+        elif typ == 'send_to_user':
+            send = data["send"]
+            user = data["user"]
+            self.sendToUser(send, user)
+        else:
+            print("unknown command processed %s" % typ)
+        
+
+    def processQueue(self):
+        self.lock.acquire(blocking=True)
+        while len(self.command_queue) > 0:
+            self.processCommand(self.command_queue.pop(0))
+        self.lock.release()
+
+

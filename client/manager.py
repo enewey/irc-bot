@@ -20,7 +20,7 @@ class BotManager(object):
 
         self.active = True
         self.client = BotClient(
-            config=self.config, 
+            config=self.config,
             listener=listener
         ).connect(channel=channel)
         self.event = threading.Event()
@@ -37,3 +37,11 @@ class BotManager(object):
 
     def get_config(self):
         return self.config
+
+    def send_command_to_bot(self, command):
+        if not self.active:
+            return
+        
+        self.client.receive(command)
+        
+
