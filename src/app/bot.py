@@ -21,9 +21,6 @@ class Bot(object):
     def is_active(self):
         return self.active
 
-    def set_listener(self, listener):
-        self.listener = listener
-
     def connect(self, channel):
         nick = self.config.user
         ident = self.config.user
@@ -60,6 +57,19 @@ class Bot(object):
         self.active = True
 
         return self
+
+    def shutdown(self):
+        if not self.active:
+            return
+        self.event.set()
+        self.sock.shutdown(socket.SHUT_WR)
+        self.sock.close()
+        self.active = False
+        print('Client exited successfully')
+
+    #
+    # Concurrent events
+    #
 
     # this is meant to be threaded... event is a threading.Event
     def watch_event(self, event):
@@ -117,17 +127,11 @@ class Bot(object):
             else:
                 print('\033[0;31m%s\033[0;37m' % line)
         return buf
-
-    def send_to_channel(self, send='', channel='#admin'):
-        if is_blank(send):
-            return
-        self.sock.sendall(('PRIVMSG %s :%s\r\n' % (channel, send)).encode())
-
-    def send_to_user(self, send='', user='admin'):
-        if is_blank(send):
-            return
-        self.sock.sendall(('PRIVMSG %s :%s\r\n' % (user, send)).encode())
     
+    #
+    # Event emitter
+    #
+
     def listener_event(self):
         if self.listener is None:
             return
@@ -139,17 +143,31 @@ class Bot(object):
         }
         self.listener(payload)
 
-    def shutdown(self):
-        if not self.active:
-            return
-        self.event.set()
-        self.sock.shutdown(socket.SHUT_WR)
-        self.sock.close()
-        self.active = False
-        print('Client exited successfully')
+    #
+    # Bot state management
+    # Every time internal state of the bot is updated, the listener_event is
+    #   called. In practice, this listener_event is provided by the GUI, and
+    #   updates the GUI to reflect the state of the bot 
+    #   (update chat window, etc)
+    #
+
+    # the userlist is an internal state that keeps track of all the
+    #   UNIQUE chatters on the connected channel.
+    def update_userlist(self, name):
+        self.userlist[name] = True
+        self.listener_event()
+
+    # 'chat' is the internal state of the chat log. basically a big list
+    #   that is human readable.
+    def update_chat(self, username, msg):
+        msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
+        msg = format('[%s]: %s' % (username, msg))
+        
+        self.chat.append(msg)
+        self.listener_event()
 
     #
-    # Functions related to receiving and processing commands
+    # Command processing
     # 'Commands' stem from user input (from the GUI), or in response to
     #   messages observed in the current IRC channel (not implemented yet)
     #
@@ -191,26 +209,18 @@ class Bot(object):
             self.send_to_user(send, user)
         else:
             print('unknown command processed %s' % typ)
-
+    
     #
-    # Bot state management
-    # Every time internal state of the bot is updated, the listener_event is
-    #   called. In practice, this listener_event is provided by the GUI, and
-    #   updates the GUI to reflect the state of the bot 
-    #   (update chat window, etc)
+    # Command handlers
     #
 
-    # the userlist is an internal state that keeps track of all the
-    #   UNIQUE chatters on the connected channel.
-    def update_userlist(self, name):
-        self.userlist[name] = True
-        self.listener_event()
+    def send_to_channel(self, send='', channel='#admin'):
+        if is_blank(send):
+            return
+        self.sock.sendall(('PRIVMSG %s :%s\r\n' % (channel, send)).encode())
 
-    # 'chat' is the internal state of the chat log. basically a big list
-    #   that is human readable.
-    def update_chat(self, username, msg):
-        msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
-        msg = format('[%s]: %s' % (username, msg))
-        
-        self.chat.append(msg)
-        self.listener_event()
+    def send_to_user(self, send='', user='admin'):
+        if is_blank(send):
+            return
+        self.sock.sendall(('PRIVMSG %s :%s\r\n' % (user, send)).encode())
+
