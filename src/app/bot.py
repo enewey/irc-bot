@@ -1,11 +1,11 @@
 import socket
 import time
-from threading import Lock
+import threading
 
 def is_blank(str):
     return bool(not str or str.isspace())
 
-class BotClient(object):
+class Bot(object):
 
     def __init__(self, config=None, listener=None):
         self.listener = listener
@@ -13,7 +13,16 @@ class BotClient(object):
         self.chat = []
         self.config = config
         self.command_queue = []
-        self.lock = Lock()
+        # threading stuff
+        self.lock = threading.Lock()
+        self.event = threading.Event()
+        self.active = False
+    
+    def is_active(self):
+        return self.active
+
+    def set_listener(self, listener):
+        self.listener = listener
 
     def connect(self, channel):
         nick = self.config.user
@@ -42,6 +51,13 @@ class BotClient(object):
         if not channel.startswith('#'):
             channel = '#' + channel
         self.sock.send(('JOIN %s\r\n' % channel).encode())
+
+        threading.Thread(
+            target=self.watch_event,
+            args=(self.event,)
+        ).start()
+
+        self.active = True
 
         return self
 
@@ -81,7 +97,7 @@ class BotClient(object):
             sp = line.split()
             cmd = sp[1]
 
-            if cmd == 'PING':
+            if sp[0] == 'PING':
                 res = format('PONG %s\r\n' % sp[1])
                 self.sock.send(res.encode())
                 print(str.rstrip(res))
@@ -124,8 +140,12 @@ class BotClient(object):
         self.listener(payload)
 
     def shutdown(self):
+        if not self.active:
+            return
+        self.event.set()
         self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
+        self.active = False
         print('Client exited successfully')
 
     #
@@ -135,6 +155,8 @@ class BotClient(object):
     #
 
     def receive(self, command):
+        if not self.active:
+            return
         self.queue_command(command)
 
     def queue_command(self, command):
@@ -147,6 +169,11 @@ class BotClient(object):
         self.lock.acquire(blocking=True)
         while len(self.command_queue) > 0:
             self.process_command(self.command_queue.pop(0))
+        self.lock.release()
+    
+    def empty_queue(self):
+        self.lock.acquire(blocking=True)
+        self.command_queue = []
         self.lock.release()
 
     # command = { type: 'string', data: {} }
