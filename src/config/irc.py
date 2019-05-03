@@ -1,5 +1,4 @@
 
-
 class IrcConfig(object):
 
     def __init__(self, config=None):

@@ -18,7 +18,7 @@ class Gui(object):
     def __init__(self, manager=None, config=None):
         if config is None:
             config = GuiConfig().load_config({
-                "font":"arial"
+                'font':'arial'
             })
 
         self.manager = manager
@@ -39,7 +39,7 @@ class Gui(object):
 
         #Timer
         self.run_timer = False
-        self.timer = tk.Label(font=(config.font, 12, ''),
+        self.timer = tk.Label(width=7, font=(config.font, 12, ''),
             text="-:--:--", bg='white')
         self.timer.grid(ipady=5, ipadx=5, row=0, rowspan=2,
              column=1, columnspan=1, sticky='nsew')
@@ -74,7 +74,7 @@ class Gui(object):
             width=100, justify=tk.LEFT)
         self.chat_input_box.grid(ipady=2, ipadx=2, row=3, 
             column=2, columnspan=3, sticky='se')
-        self.chat_input_box.bind("<Return>", self.on_chat_input_return)
+        self.chat_input_box.bind('<Return>', self.on_chat_input_return)
 
         # self.chat_frame.grid(ipady=6, ipadx=6, row=2, column=2, columnspan=10)
 
@@ -86,7 +86,7 @@ class Gui(object):
         self.register_event(self.info.update_event, self.info.update)
 
         # Set event protocol handlers
-        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.root.protocol('WM_DELETE_WINDOW', self.on_close)
 
         #It's go time boys
         self.root.mainloop()
@@ -169,10 +169,10 @@ class Gui(object):
 
     def send_to_channel(self, send, channel):
         command = {
-            "type": "send_to_channel",
-            "data": {
-                "send": send,
-                "channel": channel
+            'type': 'send_to_channel',
+            'data': {
+                'send': send,
+                'channel': channel
             }
         }
         self.manager.send_command_to_bot(command)

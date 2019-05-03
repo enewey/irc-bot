@@ -30,18 +30,18 @@ class BotClient(object):
 
         #Identify
         if password:
-            self.sock.send(("PASS %s\r\n" % password).encode())
-        self.sock.send(("NICK %s\r\n" % nick).encode())
-        self.sock.send(("USER %s %s bla :%s\r\n" % 
+            self.sock.send(('PASS %s\r\n' % password).encode())
+        self.sock.send(('NICK %s\r\n' % nick).encode())
+        self.sock.send(('USER %s %s bla :%s\r\n' % 
             (ident, host, realname)).encode()
         )
 
         #Join channel
         if is_blank(channel):
             channel = chan
-        if not channel.startswith("#"):
-            channel = "#" + channel
-        self.sock.send(("JOIN %s\r\n" % channel).encode())
+        if not channel.startswith('#'):
+            channel = '#' + channel
+        self.sock.send(('JOIN %s\r\n' % channel).encode())
 
         return self
 
@@ -65,7 +65,7 @@ class BotClient(object):
             buf = buf + self.sock.recv(4096)
         except OSError as err:
             # Socket closed while receiving buf, ignore
-            if "[Errno 9]" in str(err):
+            if '[Errno 9]' in str(err):
                 return
             else:
                 raise err
@@ -82,7 +82,7 @@ class BotClient(object):
             cmd = sp[1]
 
             if cmd == 'PING':
-                res = format("PONG %s\r\n" % sp[1])
+                res = format('PONG %s\r\n' % sp[1])
                 self.sock.send(res.encode())
                 print(str.rstrip(res))
 
@@ -99,30 +99,18 @@ class BotClient(object):
                 self.update_chat(username, msg)
 
             else:
-                print("\033[0;31m%s\033[0;37m" % line)
+                print('\033[0;31m%s\033[0;37m' % line)
         return buf
 
-    def send_to_channel(self, send="", channel="#admin"):
+    def send_to_channel(self, send='', channel='#admin'):
         if is_blank(send):
             return
-        self.sock.sendall(("PRIVMSG %s :%s\r\n" % (channel, send)).encode())
+        self.sock.sendall(('PRIVMSG %s :%s\r\n' % (channel, send)).encode())
 
-    def send_to_user(self, send="", user="admin"):
+    def send_to_user(self, send='', user='admin'):
         if is_blank(send):
             return
-        self.sock.sendall(("PRIVMSG %s :%s\r\n" % (user, send)).encode())
-
-    def update_userlist(self, name):
-        self.userlist[name] = True
-        self.listener_event()
-
-    def update_chat(self, username, msg):
-        msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
-        msg = format("[%s]: %s" % (username, msg))
-        
-        print(msg)
-        self.chat.append(msg)
-        self.listener_event()
+        self.sock.sendall(('PRIVMSG %s :%s\r\n' % (user, send)).encode())
     
     def listener_event(self):
         if self.listener is None:
@@ -135,17 +123,14 @@ class BotClient(object):
         }
         self.listener(payload)
 
-    def get_user_list(self):
-        return self.userlist
-
     def shutdown(self):
         self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
-        print("Client exited successfully")
+        print('Client exited successfully')
 
     #
     # Functions related to receiving and processing commands
-    # "Commands" stem from user input (from the GUI), or in response to
+    # 'Commands' stem from user input (from the GUI), or in response to
     #   messages observed in the current IRC channel (not implemented yet)
     #
 
@@ -164,18 +149,41 @@ class BotClient(object):
             self.process_command(self.command_queue.pop(0))
         self.lock.release()
 
-    # command = { type: "string", data: {} }
+    # command = { type: 'string', data: {} }
     def process_command(self, command):
-        typ = command["type"]
-        data = command["data"]
+        typ = command['type']
+        data = command['data']
         if typ == 'send_to_channel':
-            send = data["send"]
-            channel = data["channel"]
+            send = data['send']
+            channel = data['channel']
             self.send_to_channel(send, channel)
             self.update_chat(self.config.user, send)
         elif typ == 'send_to_user':
-            send = data["send"]
-            user = data["user"]
+            send = data['send']
+            user = data['user']
             self.send_to_user(send, user)
         else:
-            print("unknown command processed %s" % typ)
+            print('unknown command processed %s' % typ)
+
+    #
+    # Bot state management
+    # Every time internal state of the bot is updated, the listener_event is
+    #   called. In practice, this listener_event is provided by the GUI, and
+    #   updates the GUI to reflect the state of the bot 
+    #   (update chat window, etc)
+    #
+
+    # the userlist is an internal state that keeps track of all the
+    #   UNIQUE chatters on the connected channel.
+    def update_userlist(self, name):
+        self.userlist[name] = True
+        self.listener_event()
+
+    # 'chat' is the internal state of the chat log. basically a big list
+    #   that is human readable.
+    def update_chat(self, username, msg):
+        msg = ''.join(c for c in msg if len(c.encode('utf-8')) < 4)
+        msg = format('[%s]: %s' % (username, msg))
+        
+        self.chat.append(msg)
+        self.listener_event()
